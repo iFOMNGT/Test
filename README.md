@@ -2,7 +2,7 @@
 ## 项目构建思路
 ### 构建茶类的知识图谱，首先需要先收集所有茶类的信息。
 收集所有茶的信息，首先需要明确有哪些茶类——收集所有茶的种类名称，以至于能明确知道需要获取哪些茶的信息。  
-而茶的种类大致可分为7种，**6大茶**（基本种类）与**再加工茶**，，6大茶分别是[绿茶][绿茶]、[红茶][红茶]、[乌龙茶][乌龙茶]、[白茶][白茶]、[黄茶][黄茶]、[黑茶][黑茶]，而再加工茶可分为[花茶][花茶]、[紧压茶][紧压茶]、[萃取茶][萃取茶]、[果味茶][果味茶]、*药用保健茶*([减肥茶][减肥茶]、[杜仲茶][杜仲茶]、[菊花茶][菊花茶])、*含茶饮料*([茶可乐][茶可乐]、[茶汽水][茶汽水])。（若图片显示不全，[请点击此](https://static.chayeji.com/chayeji/images/2023/09/06/ad0e400874544f64a8b49549948a710e~noop_5zxh0vacdpc.jpg)
+而茶的种类大致可分为7种，**6大茶**（基本种类）与**再加工茶**，，6大茶分别是[绿茶][绿茶]、[红茶][红茶]、[乌龙茶][乌龙茶]、[白茶][白茶]、[黄茶][黄茶]、[黑茶][黑茶]，而再加工茶可分为[花茶][花茶]、[紧压茶][紧压茶]、[萃取茶][萃取茶]、[果味茶][果味茶]、*药用保健茶*([减肥茶][减肥茶]、[杜仲茶][杜仲茶]、[菊花茶][菊花茶])、*含茶饮料*([茶可乐][茶可乐]、[茶汽水][茶汽水])。（若图片显示不全，[请点击此]）(https://static.chayeji.com/chayeji/images/2023/09/06/ad0e400874544f64a8b49549948a710e~noop_5zxh0vacdpc.jpg)
     ![茶的分类图](https://static.chayeji.com/chayeji/images/2023/09/06/ad0e400874544f64a8b49549948a710e~noop_5zxh0vacdpc.jpg '茶叶集')
 
 [绿茶]: https://baike.baidu.com/item/绿茶 '百度百科'
@@ -40,6 +40,8 @@
 基于复现的项目使用的是pyltp，故同样给出[pyltp](https://pypi.org/project/pyltp/)的说明文档  
 
 [GitHub的入门教程，可点击此处了解](https://blog.csdn.net/black_sneak/article/details/139600633 'CSDN')
+
+[Drissionpage爬虫官网文档点击此处](https://www.drissionpage.cn/ 'Drissionpage')
 
 
 
@@ -92,6 +94,7 @@ uab_list = [x for x in uab_list if x is not None and x != ""]
 上饶白眉
 径山茶
 ```
+
 ```python
 #不可跳转的绿茶品种全部结果展示
 狗脑贡茶
@@ -153,6 +156,116 @@ the_first_text = target_div.get_text()
 ### 根据百度星图的数据进行爬取（测试失败）
 尝试爬取 https://baike.baidu.com/starmap/view?nodeId=753cd009fea02f26a0c031e0&lemmaTitle=%E7%BB%BF%E8%8C%B6&lemmaId=13497&starMapFrom=lemma_starMap&fromModule=lemma_starMap
 抓取含有js的内容，只用``requests``库无法正确爬取所有信息，即无法爬取所需数据，需考虑别的方法抓取数据 ~~(3小时白干QAQ)~~
+
+
+### 根据百度星图的数据进行爬取（再次尝试，这次成功）
+汲取上次的经验，``requests``无法爬取js动态渲染的内容，故通过学习``Drissionpage``库的知识，在知识学习部分已经将``Drissionpage``的链接放出，故这里不进行详细介绍，总的来说``Drissionpage``可操控浏览器、收发数据包，且语法相较``selenium``更为简单，对新手更加友好。  
+**以下只介绍代码过程（以爬取绿茶的星图为例）**。首先通过``pip install Drissionpage``下载``Drissionpage``库，在使用``Drissionpage``时需指定chrome内核浏览器的路径（因为这个库**只支持chrome内核的浏览器**）可以根据下列代码进行指定。
+```python
+from DrissionPage import ChromiumPage, ChromiumOptions
+
+path = "C:\\Program Files (x86)\\Microsoft\\Edge\Application\\msedge.exe"                   #根据自身浏览器位置修改路径，使用chrome内核的浏览器
+
+co = ChromiumOptions()
+co = ChromiumOptions.set_browser_path(co, path)
+
+my_edge = ChromiumPage(co)
+```
+
+这个库使用简单的语法即可控制浏览器打开指定url的页面
+```python
+url = 'https://baike.baidu.com/starmap/view?nodeId=753cd009fea02f26a0c031e0&lemmaTitle=%E7%BB%BF%E8%8C%B6&lemmaId=13497&starMapFrom=lemma_starMap&fromModule=lemma_starMap'
+my_edge.get(url)
+```
+
+
+以下是对抓取百度星图茶类名字代码的解释。
+定义一个类``class get_data``，本代码的操作统合成一个类，首先可以传入浏览器路径``path``，不传入就会使用下列这个默认的路径，首先基于设置创建一个浏览器窗口``my_edge``。
+```python
+class get_data:
+    #初始化浏览器，设置浏览器在电脑上的路径，需根据自身实际情况修改path
+    def __init__(self, path=None):
+        if path is None:    
+            path = "C:\\Program Files (x86)\\Microsoft\\Edge\Application\\msedge.exe"                   #根据自身浏览器位置修改路径，可使用chrome内核的浏览器
+
+        co = ChromiumOptions()
+        co = ChromiumOptions.set_browser_path(co, path)
+        
+        self.my_edge = ChromiumPage(co)
+```
+
+定义函数获取绿茶品种名称数据。首先将星图的路径传入``url``同样未传入则使用默认路径。``self.my_edge.get(url)``可控制窗口打开指定路径的网页。
+```python
+def get_greenTea_starmap(self, url=None):
+        #定位到绿茶的星图
+        if url is None:
+            url = 'https://baike.baidu.com/starmap/view?nodeId=753cd009fea02f26a0c031e0&lemmaTitle=%E7%BB%BF%E8%8C%B6&lemmaId=13497&starMapFrom=lemma_starMap&fromModule=lemma_starMap'
+            
+        #得到绿茶的主要品种名称列表
+        names = self.get_data_from('绿茶的主要品种')
+        
+        #保存绿茶名称数据
+        self.save_data('绿茶', '绿茶主要品种', names)
+        self.my_edge.wait(3)
+        
+        #得到各地特色的绿茶的名称列表
+        names = self.get_data_from('各地特色绿茶')
+        
+        #保存绿茶名称数据
+        self.save_data('绿茶', '各地特色绿茶', names)
+        self.my_edge.get(url)
+```
+
+对于函数``get_data_from``的解释如下。传入要获取路径的``title``名，控制浏览器点击这个``title``确保我们获取的列表``target``是对应的数据。其次确定这个列表中有多少条数据，后续需要根据这个数值``length``确保将所有的名字都爬取成功。找到存放名字的元素，将含有名字的列表传回来。
+```python
+def get_data_from(self, titleName):
+        self.my_edge.ele(f'text={titleName}').click()
+        print('正在获取{titleName}数据')
+        
+        #获取当前页面共有多少条信息
+        length = int(self.my_edge.ele('.sc-cCsOjp cdhAzH').text.split('个')[0][1:])
+        
+        print(f'共计有{length}条数据，正在获取数据...')
+        
+        #定位到绿茶品种的容器位置
+        target = self.my_edge.ele('@@id=scroll-ref@@class=sc-csvncw iAUKwY')
+        
+        #根据星图显示的词条数量，获取所有词条的名称
+        names = []
+        while len(names) != length:
+            target.scroll.to_bottom()                                           #当获取到的词条数量与星图显示的词条数量不一致时，则需对目标容器进行滚动，滚动到底部时再进行一次判断
+            names = self.my_edge.eles('.sc-GVOUr sc-dwLEzm elxMLl llcknL')
+            print(f'获得{len(names)}条数据!')
+        
+        
+        return [name.text for name in names]
+```
+
+获取到数据后，则将这个名字数据保存起来。传入茶的种类``kind_of_tea``，再将名字``names``数据传入。将数据保存在指定的文件目录下，若不存在这个目录则创建。将名字一行一行的保存下来。
+```python
+    #传入指定的分类茶类名字，将数据保存
+    def save_data(self, kind_of_tea, titleName, names):
+        path = os.path.join(os.path.split(__file__)[0], f'百度星图\\{kind_of_tea}星图')
+        if not os.path.exists(path):
+            os.mkdir(path)
+            
+        with open(os.path.join(path, f'{titleName}.txt'), 'w', encoding='utf-8') as f:
+            for name in names:
+                f.write(name + '\n')
+```
+
+
+当然在打开浏览器窗口之后，不要忘记关闭这个浏览器窗口。
+```python
+    #退出浏览器窗口
+    def quit(self):
+        self.my_edge.quit()
+```
+
+根据以上代码即可获得绿茶在星图上，有关品种的所有名称。  
+此外注意，文件夹中的数据已经为所有能在星图上爬取到的茶类的名称，其他的茶类需要额外在网页进行爬取（还没做）。  
+在之后，可以考虑将浏览器的打开方式调整为无头模式（即不需要渲染GUI），可提高运行速度 ~~（虽然现在要爬取的数据还不多）~~。
+
 
 
 
