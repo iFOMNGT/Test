@@ -220,7 +220,7 @@ def get_greenTea_starmap(self, url=None):
 ```python
 def get_data_from(self, titleName):
         self.my_edge.ele(f'text={titleName}').click()
-        print('正在获取{titleName}数据')
+        print(f'正在获取{titleName}数据')
         
         #获取当前页面共有多少条信息
         length = int(self.my_edge.ele('.sc-cCsOjp cdhAzH').text.split('个')[0][1:])
